@@ -200,7 +200,7 @@ export function simulate(scenario: Scenario, options: SimulateOptions = {}): Ste
         const label = op.label ?? `timeout cb${describe(op.body)}`;
         const t = makeTask('timer', label, op.body, line);
         const api: InternalApi = {
-          id: nextId('a'),
+          id: t.id,
           kind: 'timer',
           label: `setTimeout ${op.delayMs}ms${describe(op.body)}`,
           dueAt: clock + delay,
@@ -219,7 +219,7 @@ export function simulate(scenario: Scenario, options: SimulateOptions = {}): Ste
         const label = op.label ?? `readFile cb${describe(op.body)}`;
         const t = makeTask('io', label, op.body, line);
         apis.push({
-          id: nextId('a'),
+          id: t.id,
           kind: 'io',
           label: `readFile ${op.path ?? 'file.txt'}`,
           dueAt: clock + IO_LATENCY_MS,
