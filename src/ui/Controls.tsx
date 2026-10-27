@@ -19,13 +19,26 @@ export function Controls(p: Props) {
         <button onClick={p.onReset} disabled={p.disabled || p.index === 0}>
           Reset
         </button>
-        <button onClick={p.onPrev} disabled={p.disabled || p.index === 0} aria-keyshortcuts="ArrowLeft">
+        <button
+          onClick={p.onPrev}
+          disabled={p.disabled || p.index === 0}
+          aria-keyshortcuts="ArrowLeft"
+        >
           ← Prev
         </button>
-        <button className="primary" onClick={p.onToggle} disabled={p.disabled || p.index >= p.last} aria-keyshortcuts="Space">
-          {p.playing ? 'Pause' : 'Play'}
+        <button
+          className="primary"
+          onClick={p.onToggle}
+          disabled={p.disabled || p.index >= p.last}
+          aria-keyshortcuts="Space"
+        >
+          {p.playing ? "Pause" : "Play"}
         </button>
-        <button onClick={p.onNext} disabled={p.disabled || p.index >= p.last} aria-keyshortcuts="ArrowRight">
+        <button
+          onClick={p.onNext}
+          disabled={p.disabled || p.index >= p.last}
+          aria-keyshortcuts="ArrowRight"
+        >
           Next →
         </button>
       </div>

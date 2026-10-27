@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { scorePrediction, shuffleSeeded } from '../predict';
+import { useMemo, useState } from "react";
+import { scorePrediction, shuffleSeeded } from "../predict";
 
 interface Props {
   seed: string;
@@ -20,15 +20,17 @@ export function Predict({ seed, actual, revealed, onReveal, onRetry }: Props) {
       <section className="panel predict" aria-label="Prediction result">
         <h3 className="panel-title">Your prediction</h3>
         <p className="predict-summary">
-          {score.perfect ? '✓ Exactly right.' : `${score.correct} of ${actual.length} in the right place.`} Step through
-          to see why.
+          {score.perfect
+            ? "✓ Exactly right."
+            : `${score.correct} of ${actual.length} in the right place.`}{" "}
+          Step through to see why.
         </p>
         <ol className="chips">
           {actual.map((expected, i) => (
-            <li key={i} className={`chip ${score.marks[i] ? 'ok' : 'bad'}`}>
-              <span aria-hidden="true">{score.marks[i] ? '✓' : '✗'} </span>
-              <span className="sr-only">{score.marks[i] ? 'correct: ' : 'wrong: '}</span>
-              {guess[i] ?? '(missing)'}
+            <li key={i} className={`chip ${score.marks[i] ? "ok" : "bad"}`}>
+              <span aria-hidden="true">{score.marks[i] ? "✓" : "✗"} </span>
+              <span className="sr-only">{score.marks[i] ? "correct: " : "wrong: "}</span>
+              {guess[i] ?? "(missing)"}
               {!score.marks[i] && <span className="chip-note"> → {expected}</span>}
             </li>
           ))}
@@ -41,11 +43,17 @@ export function Predict({ seed, actual, revealed, onReveal, onRetry }: Props) {
   return (
     <section className="panel predict" aria-label="Predict the output">
       <h3 className="panel-title">Predict the output order</h3>
-      <p className="predict-help">Click the lines in the order you think Node prints them, then reveal.</p>
+      <p className="predict-help">
+        Click the lines in the order you think Node prints them, then reveal.
+      </p>
       <ul className="chips pool" aria-label="Available lines">
         {options.map((text, i) => (
           <li key={i}>
-            <button className="chip" disabled={picked.includes(i)} onClick={() => setPicked((p) => [...p, i])}>
+            <button
+              className="chip"
+              disabled={picked.includes(i)}
+              onClick={() => setPicked((p) => [...p, i])}
+            >
               {text}
             </button>
           </li>

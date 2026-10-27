@@ -9,17 +9,17 @@ import type {
   Step,
   Task,
   TaskKind,
-} from './types';
+} from "./types";
 
 const IO_LATENCY_MS = 5;
 const MAX_STEPS = 5000;
-const PHASES: Phase[] = ['timers', 'pending', 'poll', 'check', 'close'];
+const PHASES: Phase[] = ["timers", "pending", "poll", "check", "close"];
 const PHASE_REGION: Record<Phase, Region> = {
-  timers: 'timersQ',
-  pending: 'pendingQ',
-  poll: 'pollQ',
-  check: 'checkQ',
-  close: 'closeQ',
+  timers: "timersQ",
+  pending: "pendingQ",
+  poll: "pollQ",
+  check: "checkQ",
+  close: "closeQ",
 };
 
 interface InternalTask extends Task {
@@ -41,24 +41,22 @@ interface InternalApi extends PendingApi {
   task: InternalTask;
 }
 
-type OpName = Op['op'];
-
 function validate(ops: Op[], inAsync: boolean): void {
   ops.forEach((op, i) => {
     switch (op.op) {
-      case 'await':
-        if (!inAsync) throw new Error('await used outside an async callFn');
-        if (i !== ops.length - 1) throw new Error('await must be the last op of its body');
+      case "await":
+        if (!inAsync) throw new Error("await used outside an async callFn");
+        if (i !== ops.length - 1) throw new Error("await must be the last op of its body");
         validate(op.rest, true);
         break;
-      case 'callFn':
+      case "callFn":
         validate(op.body, op.async === true);
         break;
-      case 'setTimeout':
-      case 'setImmediate':
-      case 'nextTick':
-      case 'promiseThen':
-      case 'readFile':
+      case "setTimeout":
+      case "setImmediate":
+      case "nextTick":
+      case "promiseThen":
+      case "readFile":
         validate(op.body, false);
         break;
       default:
@@ -69,8 +67,8 @@ function validate(ops: Op[], inAsync: boolean): void {
 
 /** First log text in a body, used to make callback cards recognisable. */
 function describe(body: Op[]): string {
-  for (const op of body) if (op.op === 'log') return ` "${op.text}"`;
-  return '';
+  for (const op of body) if (op.op === "log") return ` "${op.text}"`;
+  return "";
 }
 
 export function simulate(scenario: Scenario, options: SimulateOptions = {}): Step[] {
@@ -101,7 +99,7 @@ export function simulate(scenario: Scenario, options: SimulateOptions = {}): Ste
   function emit(
     caption: string,
     highlight: Region[],
-    extra: { line?: number; moved?: Step['moved'] } = {},
+    extra: { line?: number; moved?: Step["moved"] } = {}
   ): void {
     if (steps.length >= MAX_STEPS) throw new Error(`Simulation exceeded ${MAX_STEPS} steps`);
     const step: Step = {
@@ -121,7 +119,12 @@ export function simulate(scenario: Scenario, options: SimulateOptions = {}): Ste
         check: phaseQ.check.map(pub),
         close: phaseQ.close.map(pub),
       },
-      pendingApis: apis.map(({ id, kind, label, dueAt }) => ({ id, kind, label, dueAt })),
+      pendingApis: apis.map(({ id, kind, label, dueAt }) => ({
+        id,
+        kind,
+        label,
+        dueAt,
+      })),
       console: [...consoleOut],
     };
     if (extra.line !== undefined) step.activeLine = extra.line;
@@ -129,8 +132,8 @@ export function simulate(scenario: Scenario, options: SimulateOptions = {}): Ste
     steps.push(step);
   }
 
-  function addHeap(obj: Omit<HeapObject, 'id'>): string {
-    const id = nextId('h');
+  function addHeap(obj: Omit<HeapObject, "id">): string {
+    const id = nextId("h");
     heap.push({ id, ...obj });
     return id;
   }
@@ -143,9 +146,9 @@ export function simulate(scenario: Scenario, options: SimulateOptions = {}): Ste
   }
 
   function makeTask(kind: TaskKind, label: string, body: Op[], line?: number): InternalTask {
-    const t: InternalTask = { id: nextId('t'), kind, label, body, heapIds: [] };
+    const t: InternalTask = { id: nextId("t"), kind, label, body, heapIds: [] };
     if (line !== undefined) t.line = line;
-    const closureId = addHeap({ type: 'closure', label: `closure · ${label}` });
+    const closureId = addHeap({ type: "closure", label: `closure · ${label}` });
     t.heapIds.push(closureId);
     return t;
   }
@@ -167,125 +170,157 @@ export function simulate(scenario: Scenario, options: SimulateOptions = {}): Ste
   /** Execute one op; each op is exactly one emitted step. */
   function execute(frame: Frame, op: Op): void {
     const line = op.line;
-    const at = { ...(line !== undefined ? { line } : {}) };
-    const fromStack = (t: InternalTask, to: Region) => ({
-      line: at.line,
-      moved: { taskId: t.id, from: 'callStack' as Region, to },
-    });
+    /** One op, one step: highlights the op's source line and animates `moved` out of the stack. */
+    const emitOp = (
+      caption: string,
+      highlight: Region[],
+      movedTo?: { task: InternalTask; to: Region }
+    ) =>
+      emit(caption, highlight, {
+        ...(line !== undefined ? { line } : {}),
+        ...(movedTo
+          ? {
+              moved: {
+                taskId: movedTo.task.id,
+                from: "callStack" as Region,
+                to: movedTo.to,
+              },
+            }
+          : {}),
+      });
 
     switch (op.op) {
-      case 'log': {
+      case "log": {
         consoleOut.push(op.text);
-        emit(`console.log prints "${op.text}".`, ['console'], at);
+        emitOp(`console.log prints "${op.text}".`, ["console"]);
         break;
       }
-      case 'callFn': {
-        const t = makeTask('fn', `${op.name}()`, op.body, line);
+      case "callFn": {
+        const t = makeTask("fn", `${op.name}()`, op.body, line);
         dropHeap(t.heapIds); // a direct call needs no closure object
         t.heapIds = [];
         let afId: string | undefined;
         if (op.async) {
-          afId = addHeap({ type: 'asyncFrame', label: `async ${op.name}`, state: 'pending' });
+          afId = addHeap({
+            type: "asyncFrame",
+            label: `async ${op.name}`,
+            state: "pending",
+          });
           t.heapIds.push(afId);
         }
         pushFrame(t, afId);
-        emit(`${op.name}() is called, so a frame is pushed onto the call stack.`, ['callStack', ...(op.async ? ['heap' as Region] : [])], {
-          ...at,
-          moved: { taskId: t.id, from: 'callStack', to: 'callStack' },
-        });
+        emitOp(
+          `${op.name}() is called, so a frame is pushed onto the call stack.`,
+          op.async ? ["callStack", "heap"] : ["callStack"],
+          { task: t, to: "callStack" }
+        );
         break;
       }
-      case 'setTimeout': {
+      case "setTimeout": {
         const delay = Math.max(1, op.delayMs);
         const label = op.label ?? `timeout cb${describe(op.body)}`;
-        const t = makeTask('timer', label, op.body, line);
+        const t = makeTask("timer", label, op.body, line);
         const api: InternalApi = {
           id: t.id,
-          kind: 'timer',
+          kind: "timer",
           label: `setTimeout ${op.delayMs}ms${describe(op.body)}`,
           dueAt: clock + delay,
           seq: ++seq,
           task: t,
         };
         apis.push(api);
-        emit(
-          `setTimeout hands the timer to Node's timer API; it will fire at ${api.dueAt}ms at the earliest${op.delayMs < 1 ? ' (0 is clamped to 1ms)' : ''}.`,
-          ['apis', 'heap'],
-          { ...at, moved: { taskId: t.id, from: 'callStack', to: 'apis' } },
+        emitOp(
+          `setTimeout hands the timer to Node's timer API; it will fire at ${api.dueAt}ms at the earliest${op.delayMs < 1 ? " (0 is clamped to 1ms)" : ""}.`,
+          ["apis", "heap"],
+          { task: t, to: "apis" }
         );
         break;
       }
-      case 'readFile': {
+      case "readFile": {
         const label = op.label ?? `readFile cb${describe(op.body)}`;
-        const t = makeTask('io', label, op.body, line);
+        const t = makeTask("io", label, op.body, line);
         apis.push({
           id: t.id,
-          kind: 'io',
-          label: `readFile ${op.path ?? 'file.txt'}`,
+          kind: "io",
+          label: `readFile ${op.path ?? "file.txt"}`,
           dueAt: clock + IO_LATENCY_MS,
           seq: ++seq,
           task: t,
         });
-        emit(
-          'readFile starts an asynchronous read; the callback will arrive in the poll phase once it completes.',
-          ['apis', 'heap'],
-          { ...at, moved: { taskId: t.id, from: 'callStack', to: 'apis' } },
+        emitOp(
+          "readFile starts an asynchronous read; the callback will arrive in the poll phase once it completes.",
+          ["apis", "heap"],
+          { task: t, to: "apis" }
         );
         break;
       }
-      case 'setImmediate': {
-        const t = makeTask('immediate', op.label ?? `immediate cb${describe(op.body)}`, op.body, line);
+      case "setImmediate": {
+        const t = makeTask(
+          "immediate",
+          op.label ?? `immediate cb${describe(op.body)}`,
+          op.body,
+          line
+        );
         phaseQ.check.push(t);
-        emit('setImmediate queues its callback for the check phase.', ['checkQ', 'heap'], fromStack(t, 'checkQ'));
+        emitOp("setImmediate queues its callback for the check phase.", ["checkQ", "heap"], {
+          task: t,
+          to: "checkQ",
+        });
         break;
       }
-      case 'nextTick': {
-        const t = makeTask('tick', op.label ?? `nextTick cb${describe(op.body)}`, op.body, line);
+      case "nextTick": {
+        const t = makeTask("tick", op.label ?? `nextTick cb${describe(op.body)}`, op.body, line);
         nextTickQ.push(t);
-        emit('process.nextTick puts its callback in the nextTick queue.', ['nextTick', 'heap'], fromStack(t, 'nextTick'));
+        emitOp("process.nextTick puts its callback in the nextTick queue.", ["nextTick", "heap"], {
+          task: t,
+          to: "nextTick",
+        });
         break;
       }
-      case 'promiseThen': {
-        const t = makeTask('microtask', op.label ?? `then cb${describe(op.body)}`, op.body, line);
-        const pid = addHeap({ type: 'promise', label: 'Promise', state: 'resolved' });
+      case "promiseThen": {
+        const t = makeTask("microtask", op.label ?? `then cb${describe(op.body)}`, op.body, line);
+        const pid = addHeap({
+          type: "promise",
+          label: "Promise",
+          state: "resolved",
+        });
         t.heapIds.push(pid);
         microQ.push(t);
-        emit(
-          'The promise is already resolved, so .then queues its callback in the microtask queue right away.',
-          ['microtask', 'heap'],
-          fromStack(t, 'microtask'),
+        emitOp(
+          "The promise is already resolved, so .then queues its callback in the microtask queue right away.",
+          ["microtask", "heap"],
+          { task: t, to: "microtask" }
         );
         break;
       }
-      case 'await': {
+      case "await": {
         const afId = innermostAsync();
         const af = heap.find((h) => h.id === afId);
-        if (af) af.state = 'suspended';
-        const name = frame.task.label.replace(/\(\)$/, '').replace(/ \(continued\)$/, '');
-        const t = makeTask('microtask', `${name}() continues${describe(op.rest)}`, op.rest, line);
+        if (af) af.state = "suspended";
+        const name = frame.task.label.replace(/\(\)$/, "").replace(/ \(continued\)$/, "");
+        const t = makeTask("microtask", `${name}() continues${describe(op.rest)}`, op.rest, line);
         if (afId) t.asyncFrameId = afId;
         microQ.push(t);
         // The async function suspends and returns to its caller immediately.
         frames.pop();
-        emit(
+        emitOp(
           `await suspends ${name}(); the code after it becomes a microtask and control returns to the caller.`,
-          ['callStack', 'microtask', 'heap'],
-          { ...at, moved: { taskId: t.id, from: 'callStack', to: 'microtask' } },
+          ["callStack", "microtask", "heap"],
+          { task: t, to: "microtask" }
         );
         break;
       }
-      case 'block': {
+      case "block": {
         clock += op.ms;
-        emit(
+        emitOp(
           `A busy loop blocks the single thread for ${op.ms}ms (now ${clock}ms). Nothing else can run meanwhile.`,
-          ['callStack'],
-          at,
+          ["callStack"]
         );
         break;
       }
       default: {
-        const _never: never = op;
-        throw new Error(`Unknown op ${(_never as { op: OpName }).op}`);
+        const unhandled: never = op;
+        throw new Error(`Unknown op ${JSON.stringify(unhandled)}`);
       }
     }
   }
@@ -296,12 +331,12 @@ export function simulate(scenario: Scenario, options: SimulateOptions = {}): Ste
     // Closure/promise objects are consumed once the callback is running.
     const keepAsync = task.asyncFrameId;
     const resumed = heap.find((h) => h.id === keepAsync);
-    if (resumed) resumed.state = 'pending'; // running again, no longer suspended
+    if (resumed) resumed.state = "pending"; // running again, no longer suspended
     dropHeap(task.heapIds.filter((id) => id !== keepAsync));
     task.heapIds = task.heapIds.filter((id) => id === keepAsync);
-    emit(caption, ['callStack', fromRegion, 'heap'], {
+    emit(caption, ["callStack", fromRegion, "heap"], {
       ...(task.line !== undefined ? { line: task.line } : {}),
-      moved: { taskId: task.id, from: fromRegion, to: 'callStack' },
+      moved: { taskId: task.id, from: fromRegion, to: "callStack" },
     });
 
     while (frames.length > 0) {
@@ -313,7 +348,7 @@ export function simulate(scenario: Scenario, options: SimulateOptions = {}): Ste
       }
       frames.pop();
       const asyncId = frame.asyncFrameId;
-      if (asyncId && !heap.some((h) => h.id === asyncId && h.state === 'suspended')) {
+      if (asyncId && !heap.some((h) => h.id === asyncId && h.state === "suspended")) {
         dropHeap([asyncId]);
       }
       const done = frame.task.label;
@@ -321,7 +356,7 @@ export function simulate(scenario: Scenario, options: SimulateOptions = {}): Ste
         frames.length === 0
           ? `${done} returns and the call stack is empty.`
           : `${done} returns to its caller.`,
-        ['callStack', ...(asyncId ? ['heap' as Region] : [])],
+        ["callStack", ...(asyncId ? ["heap" as Region] : [])]
       );
     }
   }
@@ -330,21 +365,28 @@ export function simulate(scenario: Scenario, options: SimulateOptions = {}): Ste
   function drain(): void {
     while (nextTickQ.length > 0 || microQ.length > 0) {
       if (nextTickQ.length > 0) {
-        emit('The call stack is empty, so Node drains the nextTick queue first.', ['nextTick']);
+        emit("The call stack is empty, so Node drains the nextTick queue first.", ["nextTick"]);
         while (nextTickQ.length > 0) {
           const t = nextTickQ.shift()!;
-          runTask(t, 'nextTick', `${t.label} moves from the nextTick queue onto the empty stack.`);
+          runTask(t, "nextTick", `${t.label} moves from the nextTick queue onto the empty stack.`);
         }
       }
       if (microQ.length > 0) {
-        emit('The nextTick queue is empty, so Node drains the microtask queue.', ['microtask']);
+        emit("The nextTick queue is empty, so Node drains the microtask queue.", ["microtask"]);
         // Microtasks queued by microtasks run in this same drain; nextTicks wait.
         while (microQ.length > 0) {
           const t = microQ.shift()!;
-          runTask(t, 'microtask', `${t.label} moves from the microtask queue onto the empty stack.`);
+          runTask(
+            t,
+            "microtask",
+            `${t.label} moves from the microtask queue onto the empty stack.`
+          );
         }
         if (nextTickQ.length > 0) {
-          emit('The microtask queue is empty but nextTick callbacks were queued meanwhile; they run now.', ['nextTick']);
+          emit(
+            "The microtask queue is empty but nextTick callbacks were queued meanwhile; they run now.",
+            ["nextTick"]
+          );
         }
       }
     }
@@ -356,7 +398,7 @@ export function simulate(scenario: Scenario, options: SimulateOptions = {}): Ste
     drain();
   }
 
-  function moveDueApis(kind: PendingApi['kind'], to: Phase): void {
+  function moveDueApis(kind: PendingApi["kind"], to: Phase): void {
     const due = apis
       .filter((a) => a.kind === kind && a.dueAt <= clock)
       .sort((a, b) => a.dueAt - b.dueAt || a.seq - b.seq);
@@ -365,11 +407,11 @@ export function simulate(scenario: Scenario, options: SimulateOptions = {}): Ste
       phaseQ[to].push(api.task);
       const late = clock - api.dueAt;
       emit(
-        kind === 'timer'
-          ? `The ${api.label} timer has elapsed${late > 0 ? ` (${late}ms late)` : ''}; its callback joins the timers queue.`
+        kind === "timer"
+          ? `The ${api.label} timer has elapsed${late > 0 ? ` (${late}ms late)` : ""}; its callback joins the timers queue.`
           : `${api.label} finished; its callback joins the poll queue.`,
-        ['apis', PHASE_REGION[to]],
-        { moved: { taskId: api.task.id, from: 'apis', to: PHASE_REGION[to] } },
+        ["apis", PHASE_REGION[to]],
+        { moved: { taskId: api.task.id, from: "apis", to: PHASE_REGION[to] } }
       );
     }
   }
@@ -383,15 +425,15 @@ export function simulate(scenario: Scenario, options: SimulateOptions = {}): Ste
 
   function enterPhase(p: Phase, caption: string): void {
     phase = p;
-    emit(caption, ['phase']);
+    emit(caption, ["phase"]);
   }
 
   // ---- main script ----
-  emit('Ready. Node is about to run the main script.', []);
-  const script = makeTask('script', 'main script', scenario.ops);
+  emit("Ready. Node is about to run the main script.", []);
+  const script = makeTask("script", "main script", scenario.ops);
   dropHeap(script.heapIds);
   script.heapIds = [];
-  runTask(script, 'callStack', 'The main script starts running on the call stack.');
+  runTask(script, "callStack", "The main script starts running on the call stack.");
   drain();
 
   // ---- event loop ----
@@ -399,46 +441,50 @@ export function simulate(scenario: Scenario, options: SimulateOptions = {}): Ste
     if (timerElapsed) clock += 1;
     emit(
       timerElapsed
-        ? 'The script is done. The event loop starts; at least 1ms has passed, so 1ms timers are already due.'
-        : 'The script is done. The event loop starts quickly, before any 1ms timer is due.',
-      ['phase'],
+        ? "The script is done. The event loop starts; at least 1ms has passed, so 1ms timers are already due."
+        : "The script is done. The event loop starts quickly, before any 1ms timer is due.",
+      ["phase"]
     );
   }
 
   while (apis.length > 0 || PHASES.some((p) => phaseQ[p].length > 0)) {
     // timers
-    enterPhase('timers', 'Timers phase: run callbacks of timers that have elapsed.');
-    moveDueApis('timer', 'timers');
-    if (phaseQ.timers.length === 0) emit('No timer is due yet, so the loop moves on.', ['phase']);
-    runQueue('timers', phaseQ.timers.length);
+    enterPhase("timers", "Timers phase: run callbacks of timers that have elapsed.");
+    moveDueApis("timer", "timers");
+    if (phaseQ.timers.length === 0) emit("No timer is due yet, so the loop moves on.", ["phase"]);
+    runQueue("timers", phaseQ.timers.length);
 
     // pending (system-level callbacks): always empty in this simulation, so skipped silently
-    phase = 'pending';
+    phase = "pending";
 
     // poll
-    enterPhase('poll', 'Poll phase: run completed I/O callbacks.');
-    moveDueApis('io', 'poll');
+    enterPhase("poll", "Poll phase: run completed I/O callbacks.");
+    moveDueApis("io", "poll");
     if (phaseQ.poll.length === 0 && phaseQ.check.length === 0 && apis.length > 0) {
       const next = Math.min(...apis.map((a) => a.dueAt));
       if (next > clock) {
         clock = next;
-        emit(`Nothing is ready and nothing is queued for check, so poll waits; the clock advances to ${clock}ms.`, ['phase']);
+        emit(
+          `Nothing is ready and nothing is queued for check, so poll waits; the clock advances to ${clock}ms.`,
+          ["phase"]
+        );
       }
-      moveDueApis('io', 'poll');
+      moveDueApis("io", "poll");
     }
-    if (phaseQ.poll.length === 0) emit('No I/O callbacks are ready, so the loop moves on.', ['phase']);
-    runQueue('poll', phaseQ.poll.length);
+    if (phaseQ.poll.length === 0)
+      emit("No I/O callbacks are ready, so the loop moves on.", ["phase"]);
+    runQueue("poll", phaseQ.poll.length);
 
     // check — only callbacks queued before the phase started run now
-    enterPhase('check', 'Check phase: run setImmediate callbacks.');
-    if (phaseQ.check.length === 0) emit('No setImmediate callbacks are queued.', ['phase']);
-    runQueue('check', phaseQ.check.length);
+    enterPhase("check", "Check phase: run setImmediate callbacks.");
+    if (phaseQ.check.length === 0) emit("No setImmediate callbacks are queued.", ["phase"]);
+    runQueue("check", phaseQ.check.length);
 
     // close: always empty, skipped silently
-    phase = 'close';
+    phase = "close";
   }
 
   phase = null;
-  emit('Nothing is left to do, so the event loop exits.', []);
+  emit("Nothing is left to do, so the event loop exits.", []);
   return steps;
 }

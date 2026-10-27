@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
-import { MotionConfig } from 'framer-motion';
-import type { Scenario, Step } from '../engine/types';
-import { CodePanel } from './CodePanel';
-import { Controls } from './Controls';
-import { Machine } from './Machine';
-import { Predict } from './Predict';
+import { useCallback, useEffect, useState } from "react";
+import { MotionConfig } from "framer-motion";
+import type { Scenario, Step } from "../engine/types";
+import { CodePanel } from "./CodePanel";
+import { Controls } from "./Controls";
+import { Machine } from "./Machine";
+import { Predict } from "./Predict";
 
 interface Props {
   scenario: Scenario;
@@ -47,22 +47,22 @@ export function Player({ scenario, steps, predictMode }: Props) {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const el = e.target as HTMLElement;
       const tag = el.tagName;
-      const isRange = tag === 'INPUT' && (el as HTMLInputElement).type === 'range';
-      if (tag === 'SELECT' || tag === 'TEXTAREA' || (tag === 'INPUT' && !isRange)) return;
-      if (e.key === 'ArrowRight' && !isRange) next();
-      else if (e.key === 'ArrowLeft' && !isRange) prev();
-      else if (e.key === ' ' && tag !== 'BUTTON' && !isRange) toggle();
+      const isRange = tag === "INPUT" && (el as HTMLInputElement).type === "range";
+      if (tag === "SELECT" || tag === "TEXTAREA" || (tag === "INPUT" && !isRange)) return;
+      if (e.key === "ArrowRight" && !isRange) next();
+      else if (e.key === "ArrowLeft" && !isRange) prev();
+      else if (e.key === " " && tag !== "BUTTON" && !isRange) toggle();
       else return;
       e.preventDefault();
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [locked, next, prev, toggle]);
 
   return (
-    <MotionConfig reducedMotion="user" transition={{ duration: 0.28, ease: 'easeOut' }}>
+    <MotionConfig reducedMotion="user" transition={{ duration: 0.28, ease: "easeOut" }}>
       <p className="caption" role="status" aria-live="polite" aria-atomic="true">
-        {locked ? 'Make your prediction first, then reveal to start stepping.' : step.caption}
+        {locked ? "Make your prediction first, then reveal to start stepping." : step.caption}
       </p>
       <Controls
         index={index}
@@ -96,7 +96,7 @@ export function Player({ scenario, steps, predictMode }: Props) {
           ) : (
             <section className="panel expected" aria-label="Expected output">
               <h3 className="panel-title">Expected output</h3>
-              <p className="expected-line">{actual.join('  ·  ')}</p>
+              <p className="expected-line">{actual.join("  ·  ")}</p>
             </section>
           )}
         </div>

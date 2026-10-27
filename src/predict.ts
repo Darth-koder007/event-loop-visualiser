@@ -25,5 +25,9 @@ export interface Score {
 export function scorePrediction(guess: string[], actual: string[]): Score {
   const marks = actual.map((v, i) => guess[i] === v);
   const correct = marks.filter(Boolean).length;
-  return { marks, correct, perfect: correct === actual.length && guess.length === actual.length };
+  return {
+    marks,
+    correct,
+    perfect: correct === actual.length && guess.length === actual.length,
+  };
 }

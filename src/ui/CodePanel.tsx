@@ -1,4 +1,10 @@
-export function CodePanel({ code, activeLine }: { code: string[]; activeLine: number | undefined }) {
+export function CodePanel({
+  code,
+  activeLine,
+}: {
+  code: string[];
+  activeLine: number | undefined;
+}) {
   return (
     <section className="panel code" aria-label="Source code">
       <h3 className="panel-title">Code</h3>
@@ -7,11 +13,15 @@ export function CodePanel({ code, activeLine }: { code: string[]; activeLine: nu
           const n = i + 1;
           const active = n === activeLine;
           return (
-            <li key={n} className={active ? 'active' : ''} aria-current={active ? 'step' : undefined}>
+            <li
+              key={n}
+              className={active ? "active" : ""}
+              aria-current={active ? "step" : undefined}
+            >
               <span className="ln" aria-hidden="true">
                 {n}
               </span>
-              <code>{text || ' '}</code>
+              <code>{text || " "}</code>
             </li>
           );
         })}

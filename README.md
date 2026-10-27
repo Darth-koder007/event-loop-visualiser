@@ -38,12 +38,12 @@ Add an object to `src/scenarios/index.ts` and append it to `scenarios`:
 
 ```ts
 const example: Scenario = {
-  id: 'example',
-  title: 'My scenario',
-  summary: 'One sentence.',
+  id: "example",
+  title: "My scenario",
+  summary: "One sentence.",
   code: ["setImmediate(() => console.log('x'));"], // display only
-  ops: [{ op: 'setImmediate', line: 1, body: [{ op: 'log', text: 'x', line: 1 }] }],
-  expectedOutput: ['x'],
+  ops: [{ op: "setImmediate", line: 1, body: [{ op: "log", text: "x", line: 1 }] }],
+  expectedOutput: ["x"],
 };
 ```
 

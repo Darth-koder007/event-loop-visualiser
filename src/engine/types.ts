@@ -6,15 +6,15 @@ interface OpBase {
 }
 
 export type Op =
-  | (OpBase & { op: 'log'; text: string })
-  | (OpBase & { op: 'setTimeout'; delayMs: number; body: Op[]; label?: string })
-  | (OpBase & { op: 'setImmediate'; body: Op[]; label?: string })
-  | (OpBase & { op: 'nextTick'; body: Op[]; label?: string })
-  | (OpBase & { op: 'promiseThen'; body: Op[]; label?: string }) // already-resolved promise
-  | (OpBase & { op: 'await'; rest: Op[] }) // must be the last op of an async callFn
-  | (OpBase & { op: 'readFile'; path?: string; body: Op[]; label?: string })
-  | (OpBase & { op: 'callFn'; name: string; body: Op[]; async?: boolean })
-  | (OpBase & { op: 'block'; ms: number }); // busy loop: advances the virtual clock
+  | (OpBase & { op: "log"; text: string })
+  | (OpBase & { op: "setTimeout"; delayMs: number; body: Op[]; label?: string })
+  | (OpBase & { op: "setImmediate"; body: Op[]; label?: string })
+  | (OpBase & { op: "nextTick"; body: Op[]; label?: string })
+  | (OpBase & { op: "promiseThen"; body: Op[]; label?: string }) // already-resolved promise
+  | (OpBase & { op: "await"; rest: Op[] }) // must be the last op of an async callFn
+  | (OpBase & { op: "readFile"; path?: string; body: Op[]; label?: string })
+  | (OpBase & { op: "callFn"; name: string; body: Op[]; async?: boolean })
+  | (OpBase & { op: "block"; ms: number }); // busy loop: advances the virtual clock
 
 export interface Scenario {
   id: string;
@@ -32,23 +32,23 @@ export interface SimulateOptions {
   timerElapsedAtLoopStart?: boolean;
 }
 
-export type Phase = 'timers' | 'pending' | 'poll' | 'check' | 'close';
+export type Phase = "timers" | "pending" | "poll" | "check" | "close";
 
 export type Region =
-  | 'callStack'
-  | 'heap'
-  | 'nextTick'
-  | 'microtask'
-  | 'timersQ'
-  | 'pendingQ'
-  | 'pollQ'
-  | 'checkQ'
-  | 'closeQ'
-  | 'apis'
-  | 'console'
-  | 'phase';
+  | "callStack"
+  | "heap"
+  | "nextTick"
+  | "microtask"
+  | "timersQ"
+  | "pendingQ"
+  | "pollQ"
+  | "checkQ"
+  | "closeQ"
+  | "apis"
+  | "console"
+  | "phase";
 
-export type TaskKind = 'script' | 'timer' | 'immediate' | 'tick' | 'microtask' | 'io' | 'fn';
+export type TaskKind = "script" | "timer" | "immediate" | "tick" | "microtask" | "io" | "fn";
 
 export interface Task {
   id: string; // stable for the task's whole life, so the UI can animate its movement
@@ -58,14 +58,14 @@ export interface Task {
 
 export interface HeapObject {
   id: string;
-  type: 'closure' | 'promise' | 'asyncFrame';
+  type: "closure" | "promise" | "asyncFrame";
   label: string;
-  state?: 'pending' | 'resolved' | 'suspended';
+  state?: "pending" | "resolved" | "suspended";
 }
 
 export interface PendingApi {
   id: string;
-  kind: 'timer' | 'io';
+  kind: "timer" | "io";
   label: string;
   dueAt: number; // virtual ms
 }
